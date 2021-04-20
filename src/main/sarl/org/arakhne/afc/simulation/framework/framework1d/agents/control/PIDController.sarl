@@ -1,0 +1,73 @@
+/** 
+ * 
+ */
+package org.arakhne.afc.simulation.framework.framework1d.agents.control
+
+import org.eclipse.xtend.lib.annotations.Accessors
+
+/** 
+ * Implementation of a generic PID controller
+ * {@link https://en.wikipedia.org/wiki/PID_controller}.
+ * 
+ * @author $Author: alombard$
+ * @version $FullVersion$
+ * @mavengroupid $GroupId$
+ * @mavenartifactid $ArtifactId$
+ */
+class PIDController {
+	
+	@Accessors(PUBLIC_GETTER)
+	val kp : double
+	@Accessors(PUBLIC_GETTER)
+	val ki : double
+	@Accessors(PUBLIC_GETTER)
+	val kd : double
+	
+	@Accessors(PUBLIC_GETTER, PUBLIC_SETTER)
+	var setpoint: double
+	
+	var cumulativeError: double
+	var previousError: double
+	
+	/**
+	 * Initialize the PID controller with the given coefficients
+	 * @param kp the proportional gain
+	 * @param ki the integral gain
+	 * @param kd the derivative gain
+	 */
+	new(kp: double, ki: double, kd: double) {
+		this.kp = kp
+		this.ki = ki
+		this.kd = kd
+	}
+	
+	/**
+	 * Execute a step of the controller
+	 * @param measure the measure valued
+	 * @param deltaTime the delta time between two steps
+	 */
+	def step(measure: double, deltaTime: double): double {
+		// Compute error
+		val error = setpoint - measure
+		
+		// Update cumulative error
+		cumulativeError += error * deltaTime
+		
+		// Compute the command
+		val command = kp * error + ki * cumulativeError + kd * (error - previousError) / deltaTime
+		
+		// Update the previous error
+		previousError = error
+		
+		return command
+	}
+	
+	/**
+	 * Re-initialize the PID controller
+	 */
+	def reset() {
+		cumulativeError = 0
+		previousError = 0
+	}
+	
+}

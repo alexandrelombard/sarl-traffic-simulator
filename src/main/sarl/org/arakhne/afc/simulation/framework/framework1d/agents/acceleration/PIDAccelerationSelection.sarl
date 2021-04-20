@@ -1,0 +1,80 @@
+/* 
+ * $Id$
+ * This file is a part of the Arakhne Foundation Classes, http://www.arakhne.org/afc
+ * 
+ * Copyright (c) 2000-2012 Stephane GALLAND.
+ * Copyright (c) 2005-10, Multiagent Team, Laboratoire Systemes et Transports,
+ * Universite de Technologie de Belfort-Montbeliard.
+ * Copyright (c) 2013-2020 The original authors, and other authors.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.arakhne.afc.simulation.framework.framework1d.agents.acceleration
+
+import org.arakhne.afc.math.MathUtil
+
+import org.arakhne.afc.simulation.framework.framework1d.agents.control.PIDController
+
+/**
+ * Capacity for an agent to choose a acceleration according to a PID controller
+ * {@link https://en.wikipedia.org/wiki/PID_controller}.
+ * 
+ * @author $Author: alombard$
+ * @version $FullVersion$
+ * @mavengroupid $GroupId$
+ * @mavenartifactid $ArtifactId$
+ */
+skill PIDAccelerationSelection extends AbstractAccelerationSelection {
+	
+	// TODO 
+	
+	// FIXME This should be dynamically provided by the compute functions 
+	val FIXED_DELTA_TIME = 0.1
+		
+	val TARGET_HEADWAY_TIME = 2.0
+	
+	val KP_CRUISE_CONTROL = 1.0
+	val KI_CRUISE_CONTROL = 0.25
+	val KD_CRUISE_CONTROL = 0
+
+	val KP_HEADWAY_CONTROL = 1.0
+	val KI_HEADWAY_CONTROL = 0.25
+	val KD_HEADWAY_CONTROL = 0
+	
+	val speedController = new PIDController(KP_CRUISE_CONTROL, KI_CRUISE_CONTROL, KD_CRUISE_CONTROL)
+	val headwayTimeController = new PIDController(KP_HEADWAY_CONTROL, KI_HEADWAY_CONTROL, KD_HEADWAY_CONTROL)
+	
+	new() {
+		headwayTimeController.setpoint = TARGET_HEADWAY_TIME
+	}
+
+	protected override computeObstacleDrivingAcceleration(currentSpeed : double, desiredSpeed : double,
+		comfortDeceleration : double, maxAcceleration : double, maxDeceleration : double, safetyDistance : double,
+		reactionTime : double, obstacleDistance : double, obstacleSpeed : double) : double {
+		// Compute the acceleration with the headway time controller
+		var relativeSpeed = currentSpeed - obstacleSpeed
+		var headwayTime = obstacleDistance / relativeSpeed
+		var acceleration = headwayTimeController.step(headwayTime, FIXED_DELTA_TIME)
+		
+		return MathUtil::clamp(acceleration, -maxDeceleration, maxAcceleration)
+	}
+
+	protected override computeFreeDrivingAcceleration(currentSpeed : double, desiredSpeed : double,
+		maxAcceleration : double, maxDeceleration : double) : double {
+		// Compute the acceleration with the cruise controller
+		speedController.setpoint = desiredSpeed
+		
+		var acceleration = speedController.step(currentSpeed, FIXED_DELTA_TIME)
+		return MathUtil::clamp(acceleration, -maxDeceleration, maxAcceleration)
+	}
+
+}
+
