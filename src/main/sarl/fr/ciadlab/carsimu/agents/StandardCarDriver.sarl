@@ -34,6 +34,9 @@ import org.arakhne.afc.simulation.framework.framework1d.preferences.PreferenceMa
 
 import static extension org.arakhne.afc.simulation.framework.base.preferences.PreferenceManagerSingleton.*
 import fr.ciadlab.carsimu.behaviors.Driver
+import org.arakhne.afc.simulation.framework.framework1d.agents.cruisespeed.RoadCruiseSpeedManager
+import org.arakhne.afc.simulation.framework.framework1d.agents.path.RandomPathSelection
+import org.arakhne.afc.simulation.framework.framework1d.agents.obstacle.StandardObstacleDetector
 
 /**
  * The agent that supports the driver behavior with the control of a standard car.
@@ -65,6 +68,17 @@ agent StandardCarDriver extends AbstractSimulatedAgent1d {
 		val humanEstimationModel = typeof(PreferenceManager).singleton.humanEstimationModel
 		val humanEstimationSkill = humanEstimationModel.skillType.newInstance
 		setSkill(humanEstimationSkill)
+		
+		// region Manually registering default skills
+		val roadCruiseSpeedManager = new RoadCruiseSpeedManager(this)
+		setSkill(roadCruiseSpeedManager)
+
+		val pathSelection = new RandomPathSelection(this)
+		setSkill(pathSelection)
+		
+		val obstacleDetector = new StandardObstacleDetector(this)
+		setSkill(obstacleDetector)
+		// endregion
 
 		this.driverBehavior = new Driver(this)
 		this.driverBehavior.registerBehavior(it.parameters)
